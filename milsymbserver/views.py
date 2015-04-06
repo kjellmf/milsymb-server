@@ -1,5 +1,7 @@
+from functools import wraps
 from pprint import pprint
 from flask import abort
+from flask import Response
 import flask
 from milsymbserver import app
 
@@ -29,11 +31,24 @@ def parse_sidc(sidc):
     return d
 
 
+def return_svg(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        r = f(*args, **kwargs)
+        return Response(r, mimetype='image/svg+xml')
+    return decorated_function
 
 @app.route('/sidc/<sic>/')
+@return_svg
 def sic(sic):
     if len(sic) != 20:
         app.logger.error('Invalid SIDC length')
         abort(404)
     elements = parse_sidc(sic)
     return flask.jsonify(elements)
+
+
+@app.route('/testsymbol')
+@return_svg
+def testsymbol():
+    return ""

@@ -9,9 +9,6 @@ class MilSymbTestCase(TestCase):
         return app
 
 
-
-
-
 class TestSidc(MilSymbTestCase):
     def test_invalid_sic_length(self):
         response = self.client.get('/sidc/123456/')
@@ -19,6 +16,17 @@ class TestSidc(MilSymbTestCase):
 
     def test_valid_sic(self):
         response = self.client.get('/sidc/10031002181211020000/')
+
+
+class TestResponseType(MilSymbTestCase):
+    def test_svg_response(self):
+        response = self.client.get('/sidc/10031002181211020000/')
+        self.assertEqual("image/svg+xml", response.mimetype,)
+
+    def test_testsymbol(self):
+        response = self.client.get('/testsymbol')
+        self.assertEqual("image/svg+xml", response.mimetype,)
+
 
 if __name__ == '__main__':
     unittest.main()
