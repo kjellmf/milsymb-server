@@ -1,4 +1,5 @@
 import unittest
+from os.path import exists
 from jmsml import Sidc, InvalidSidcLength, MilSymbol
 from milsymbserver import app
 
@@ -33,9 +34,27 @@ class TestSidcClass(MilSymbTestCase):
 
 
 class TestMilSymbol(MilSymbTestCase):
-    def test_innit(self):
+
+    def test_frame_fn(self):
         symb = MilSymbol("10031002181211020000")
-        self.assertEqual("sdfsd23423423f.svg", symb.frame_fn)
+        self.assertIn("0_310_0.svg", symb.frame_fn)
+        symb = MilSymbol("10131002181211020000")
+        self.assertIn("1_310_0.svg", symb.frame_fn)
+        symb = MilSymbol("10131012181211020000")
+        self.assertIn("1_310_1.svg", symb.frame_fn)
+        symb = MilSymbol("10131042181211020000")
+        self.assertIn("1_310_0.svg", symb.frame_fn)
+
+    def test_frame_fn_exists(self):
+        symb = MilSymbol("10031002181211020000")
+        self.assertTrue(exists(symb.frame_fn), "Can't find file %s" % symb.frame_fn)
+        symb = MilSymbol("10131002181211020000")
+        self.assertTrue(exists(symb.frame_fn), "Can't find file %s" % symb.frame_fn)
+        symb = MilSymbol("10131012181211020000")
+        self.assertTrue(exists(symb.frame_fn), "Can't find file %s" % symb.frame_fn)
+        symb = MilSymbol("10131042181211020000")
+        self.assertTrue(exists(symb.frame_fn), "Can't find file %s" % symb.frame_fn)
+
 
 
 

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Code for retrieving data from the JMSML project"""
 import json
+import os
 from milsymbserver import app
 
 _JMSML = {}
@@ -52,9 +53,9 @@ class SymbolMappings(object):
 
 
 _load_jmsml_data(app.config["DATA_FILE"])
+_SVG_PATH = app.config["SVG_PATH"]
+
 mappings = SymbolMappings(_JMSML)
-
-
 
 
 class InvalidSidcLength(Exception):
@@ -103,9 +104,10 @@ class MilSymbol(object):
         affiliations = _JMSML["affiliations"]
         frame_data = affiliations[self._context_id][self._dimension_id][self._standard_identity_id]
         if self.sidc.status == "1" and "plannedGraphic" in frame_data:
-            self._frame_fn = frame_data["plannedGraphic"]
+            frame_fn = frame_data["plannedGraphic"]
         else:
-            self._frame_fn = frame_data["graphic"]
+            frame_fn = frame_data["graphic"]
+        self._frame_fn = os.path.normpath(os.path.join(_SVG_PATH, frame_fn))
 
     def _init_ids(self):
         self._context_id = mappings.context.get(self.sidc.context)
