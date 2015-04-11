@@ -1,18 +1,35 @@
 # -*- coding: utf-8 -*-
 """Code for retrieving data from the JMSML project"""
 import json
-import os
+from os.path import normpath, join, exists
 from milsymbserver import app
 
 _JMSML = {}
+
 
 def _load_jmsml_data(json_filepath):
     global _JMSML
     with open(json_filepath) as f:
         _JMSML = json.load(f)
 
-
     print _JMSML["affiliations"]
+
+
+# Note: For full-frame main icons (main icons that touch the frame), there is an additional suffix depending on the frame that the icon must touch:
+# _0 = Unknown
+# _1 = Friend
+# _2 = Neutral
+# _3 = Hostile
+_SID_FILE_SUFFIX_MAPPING = {
+    "0": "0",
+    "1": "0",
+    "2": "1",
+    "3": "1",
+    "4": "2",
+    "5": "3",
+    "6": "3",
+
+}
 
 
 class SymbolMappings(object):
@@ -50,8 +67,6 @@ class SymbolMappings(object):
         return self._symbol_set_mappings
 
 
-
-
 _load_jmsml_data(app.config["DATA_FILE"])
 _SVG_PATH = app.config["SVG_PATH"]
 
@@ -64,6 +79,7 @@ class InvalidSidcLength(Exception):
 
 class Sidc(object):
     """Representation of a 20-digit symbol identification code"""
+
     def __init__(self, sidc):
         if len(sidc) != 20:
             raise InvalidSidcLength
@@ -83,15 +99,18 @@ class Sidc(object):
 
     def __str__(self):
         segments = [self.version, self.context, self.standard_identity, self.symbolset, self.status, self.hqtfd,
-                    self.amplifier, self.amplifier_descriptor, self.entity, self.entity_type, self.entity_subtype, self.modifier_one, self.modifier_two]
+                    self.amplifier, self.amplifier_descriptor, self.entity, self.entity_type, self.entity_subtype,
+                    self.modifier_one, self.modifier_two]
         return "".join(segments)
 
 
 class MilSymbol(object):
     """Representation of a MILSTD 2525D/APP6D symbol"""
+
     def __init__(self, sidc):
         self.sidc = Sidc(sidc)
         self._frame_fn = None
+        self._main_icon_fn = None
         self._init_ids()
 
     @property
@@ -100,6 +119,12 @@ class MilSymbol(object):
             self._find_frame_fn()
         return self._frame_fn
 
+    @property
+    def main_icon_fn(self):
+        if not self._main_icon_fn:
+            self._find_main_icon_fn()
+        return self._main_icon_fn;
+
     def _find_frame_fn(self):
         affiliations = _JMSML["affiliations"]
         frame_data = affiliations[self._context_id][self._dimension_id][self._standard_identity_id]
@@ -107,13 +132,23 @@ class MilSymbol(object):
             frame_fn = frame_data["plannedGraphic"]
         else:
             frame_fn = frame_data["graphic"]
-        self._frame_fn = os.path.normpath(os.path.join(_SVG_PATH, frame_fn))
+        self._frame_fn = normpath(join(_SVG_PATH, frame_fn))
 
     def _init_ids(self):
         self._context_id = mappings.context.get(self.sidc.context)
         self._standard_identity_id = mappings.standard_identity.get(self.sidc.standard_identity)
         self._symbol_set = mappings.symbol_sets.get(self.sidc.symbolset)
+        self._symbol_set_path = self._symbol_set.get("graphicFolder", {}).get("entities")
         self._dimension_id = self._symbol_set.get("dimensionId")
+
+    def _find_main_icon_fn(self):
+        fn = self.sidc.symbolset + self.sidc.entity + self.sidc.entity_type + self.sidc.entity_subtype
+        full_frame_fn = join(_SVG_PATH, self._symbol_set_path, fn + "_" \
+                             + _SID_FILE_SUFFIX_MAPPING[self.sidc.standard_identity] + ".svg")
+        if exists(full_frame_fn):
+            self._main_icon_fn = full_frame_fn
+        else:
+            self._main_icon_fn = join(_SVG_PATH, self._symbol_set_path, fn + ".svg")
 
 
 

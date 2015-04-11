@@ -55,6 +55,18 @@ class TestMilSymbol(MilSymbTestCase):
         symb = MilSymbol("10131042181211020000")
         self.assertTrue(exists(symb.frame_fn), "Can't find file %s" % symb.frame_fn)
 
+    def test_main_icon_fn(self):
+        symb = MilSymbol('10031000161211000019')
+        self.assertIn("10121100_1.svg", symb.main_icon_fn)
+        symb = MilSymbol('10233000001201000000')
+        self.assertIn("30120100.svg", symb.main_icon_fn)
+
+    def test_main_icon_fn_exists(self):
+        symb = MilSymbol('10031000161211000019')
+        self.assertTrue(exists(symb.main_icon_fn), "Can't find file %s" % symb.main_icon_fn)
+        symb = MilSymbol('10233000001201000000')
+        self.assertTrue(exists(symb.main_icon_fn), "Can't find file %s" % symb.main_icon_fn)
+
 
 
 
