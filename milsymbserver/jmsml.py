@@ -110,9 +110,13 @@ class MilSymbol(object):
     """Representation of a MILSTD 2525D/APP6D symbol"""
 
     def __init__(self, sidc):
+        
         self.sidc = Sidc(sidc)
         self._frame_fn = None
         self._main_icon_fn = None
+        self._mod_one_fn = None
+        self._mod_two_fn = None
+        
         self._init_ids()
         self._find_frame_fn()
         self._find_main_icon_fn()
@@ -127,7 +131,19 @@ class MilSymbol(object):
     def main_icon_fn(self):
         if not self._main_icon_fn:
             self._find_main_icon_fn()
-        return self._main_icon_fn;
+        return self._main_icon_fn
+
+    @property
+    def mod_one_fn(self):
+        if not self._mod_one_fn:
+            self._find_mod_one_fn()
+        return self._mod_one_fn
+
+    @property
+    def mod_two_fn(self):
+        if not self._mod_two_fn:
+            self._find_mod_two_fn()
+        return self._mod_two_fn
 
     def _find_frame_fn(self):
         affiliations = _JMSML["affiliations"]
@@ -146,6 +162,8 @@ class MilSymbol(object):
         self._standard_identity_id = mappings.standard_identity.get(self.sidc.standard_identity)
         self._symbol_set = mappings.symbol_sets.get(self.sidc.symbolset, {})
         self._symbol_set_path = self._symbol_set.get("graphicFolder", {}).get("entities")
+        self._mod_one_path = self._symbol_set.get("graphicFolder", {}).get("modifierOnes")
+        self._mod_two_path = self._symbol_set.get("graphicFolder", {}).get("modifierTwos")
         self._dimension_id = self._symbol_set.get("dimensionId")
 
     def _find_main_icon_fn(self):
@@ -157,9 +175,13 @@ class MilSymbol(object):
         else:
             self._main_icon_fn = join(_SVG_PATH, self._symbol_set_path, fn + ".svg")
 
+    def _find_mod_one_fn(self):
+        if self.sidc.modifier_one != "00" and self._mod_one_path:
+            fn = self.sidc.symbolset + self.sidc.modifier_one + "1"
+            self._mod_one_fn = join(_SVG_PATH, self._mod_one_path, fn + ".svg")
 
-
-
-
-
+    def _find_mod_two_fn(self):
+        if self.sidc.modifier_two != "00" and self._mod_two_path:
+            fn = self.sidc.symbolset + self.sidc.modifier_two + "2"
+            self._mod_two_fn = join(_SVG_PATH, self._mod_two_path, fn + ".svg")
 

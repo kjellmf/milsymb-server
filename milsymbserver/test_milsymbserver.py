@@ -82,6 +82,8 @@ class TestSidc(MilSymbTestCase):
     def test_invalid_sic(self):
         response = self.client.get('/sidc/10039902181211020000/')
         self.assert404(response)
+        response = self.client.get('/sidc/10024000001200000109/')
+        self.assert404(response)
 
 
 

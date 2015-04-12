@@ -39,7 +39,7 @@ def sic(sic):
         app.logger.error('Invalid symbol identification code')
         abort(404)
 
-    merged_svg = merge_svgs([symb.frame_fn, symb.main_icon_fn])
+    merged_svg = merge_svgs([symb.frame_fn, symb.main_icon_fn, symb.mod_one_fn, symb.mod_two_fn])
     f = StringIO()
     merged_svg.write(f, xml_declaration=True, encoding='utf-8')
     return f.getvalue()
@@ -55,7 +55,9 @@ def merge_svgs(list_of_file_names):
             g.attrib.pop("id")
         if g.get('display', '') == "none":
             root.remove(g)
-    for file_name in list_of_file_names[1:]:
+    for file_name in list_of_file_names[1:] :
+        if not file_name:
+            continue
         svg = ET.parse(file_name)
         for g in svg.getroot().findall(ns_tag('g')):
             if "id" in g.attrib:
@@ -68,7 +70,7 @@ def merge_svgs(list_of_file_names):
 @app.route('/testsymbol')
 @return_svg
 def testsymbol():
-    symb = MilSymbol('10233000001201000000')
+    symb = MilSymbol('10031000161211002019')
     merged_svg = merge_svgs([symb.frame_fn, symb.main_icon_fn])
     f = StringIO()
     merged_svg.write(f, xml_declaration=True, encoding='utf-8')
