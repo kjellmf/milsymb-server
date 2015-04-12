@@ -73,9 +73,11 @@ _SVG_PATH = app.config["SVG_PATH"]
 mappings = SymbolMappings(_JMSML)
 
 
-class InvalidSidcLength(Exception):
-    """The symbol identification code has an invalid length"""
+class InvalidSidc(Exception):
+    """The symbol identification code is invalid"""
 
+class InvalidSidcLength(InvalidSidc):
+    """The symbol identification code has an invalid length"""
 
 class Sidc(object):
     """Representation of a 20-digit symbol identification code"""
@@ -112,6 +114,8 @@ class MilSymbol(object):
         self._frame_fn = None
         self._main_icon_fn = None
         self._init_ids()
+        self._find_frame_fn()
+        self._find_main_icon_fn()
 
     @property
     def frame_fn(self):
@@ -127,7 +131,10 @@ class MilSymbol(object):
 
     def _find_frame_fn(self):
         affiliations = _JMSML["affiliations"]
-        frame_data = affiliations[self._context_id][self._dimension_id][self._standard_identity_id]
+        try:
+            frame_data = affiliations[self._context_id][self._dimension_id][self._standard_identity_id]
+        except KeyError:
+            raise InvalidSidc
         if self.sidc.status == "1" and "plannedGraphic" in frame_data:
             frame_fn = frame_data["plannedGraphic"]
         else:
@@ -137,7 +144,7 @@ class MilSymbol(object):
     def _init_ids(self):
         self._context_id = mappings.context.get(self.sidc.context)
         self._standard_identity_id = mappings.standard_identity.get(self.sidc.standard_identity)
-        self._symbol_set = mappings.symbol_sets.get(self.sidc.symbolset)
+        self._symbol_set = mappings.symbol_sets.get(self.sidc.symbolset, {})
         self._symbol_set_path = self._symbol_set.get("graphicFolder", {}).get("entities")
         self._dimension_id = self._symbol_set.get("dimensionId")
 

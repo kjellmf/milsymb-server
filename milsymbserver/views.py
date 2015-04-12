@@ -3,7 +3,7 @@ from functools import wraps
 from flask import abort
 from flask import Response
 import flask
-from jmsml import Sidc, InvalidSidcLength
+from jmsml import Sidc, InvalidSidcLength, MilSymbol, InvalidSidc
 from milsymbserver import app
 from os.path import join
 import xml.etree.ElementTree as ET
@@ -31,14 +31,19 @@ def index():
 
 
 @app.route('/sidc/<sic>/')
+@return_svg
 def sic(sic):
     try:
-        sidc = Sidc(sic)
-    except InvalidSidcLength:
-        app.logger.error('Invalid SIDC length')
+        symb = MilSymbol(sic)
+    except InvalidSidc:
+        app.logger.error('Invalid symbol identification code')
         abort(404)
 
-    return flask.jsonify(sidc.__dict__)
+    merged_svg = merge_svgs([symb.frame_fn, symb.main_icon_fn])
+    f = StringIO()
+    merged_svg.write(f, xml_declaration=True, encoding='utf-8')
+    return f.getvalue()
+
 
 
 def merge_svgs(list_of_file_names):
@@ -63,11 +68,8 @@ def merge_svgs(list_of_file_names):
 @app.route('/testsymbol')
 @return_svg
 def testsymbol():
-    svg1 = join(app.config["SVG_PATH"], "Frames/0_001_0.svg")
-    svg2 = join(app.config["SVG_PATH"], "Appendices/Air/01110000.svg")
-    svg3 = join(app.config["SVG_PATH"], "Appendices/Air\mod2/01042.svg")
-    merged_svg = merge_svgs([svg1, svg2, svg3])
-
+    symb = MilSymbol('10233000001201000000')
+    merged_svg = merge_svgs([symb.frame_fn, symb.main_icon_fn])
     f = StringIO()
     merged_svg.write(f, xml_declaration=True, encoding='utf-8')
     return f.getvalue()
