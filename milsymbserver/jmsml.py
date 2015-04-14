@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Code for retrieving data from the JMSML project"""
+from collections import defaultdict
 import json
 from os.path import normpath, join, exists
 from milsymbserver import app
@@ -38,14 +39,15 @@ class SymbolMappings(object):
         self._create_standard_identity_mappings()
         self._create_context_mappings()
         self._create_symbolset_mappings()
+        self._create_amplifier_mappings()
 
     def _create_standard_identity_mappings(self):
-        self._si_mappings = {}
+        self._si_mappings = defaultdict(dict)
         for si in self._data["standardIdentities"]:
             self._si_mappings[si["digits"]] = si["id"]
 
     def _create_context_mappings(self):
-        self._context_mappings = {}
+        self._context_mappings = defaultdict(dict)
         for context in self._data["contexts"]:
             self._context_mappings[context["digits"]] = context["id"]
 
@@ -57,14 +59,32 @@ class SymbolMappings(object):
     def context(self):
         return self._context_mappings
 
+    @property
+    def amplifiers(self):
+        return self._amplifier_mappings
+
     def _create_symbolset_mappings(self):
-        self._symbol_set_mappings = {}
+        self._symbol_set_mappings = defaultdict(dict)
         for symbol_set in self._data["symbolSets"]:
             self._symbol_set_mappings[symbol_set["digits"]] = symbol_set
 
     @property
     def symbol_sets(self):
         return self._symbol_set_mappings
+
+    @property
+    def standard_identity_group(self):
+        return self._data["standardIdentityGroupMapping"]
+
+
+    def _create_amplifier_mappings(self):
+        self._amplifier_mappings = defaultdict(dict)
+        for amplifier in self._data["amplifier"]:
+            descriptors = defaultdict(dict)
+            for descriptor in amplifier["descriptors"]:
+                descriptors[descriptor["digits"]] = descriptor
+            self._amplifier_mappings[amplifier["digits"]] = descriptors
+
 
 
 _load_jmsml_data(app.config["DATA_FILE"])
@@ -113,6 +133,7 @@ class MilSymbol(object):
 
     def __init__(self, sidc):
 
+        self._amplifier_fn = None
         self.sidc = Sidc(sidc)
         self._frame_fn = None
         self._main_icon_fn = None
@@ -122,6 +143,8 @@ class MilSymbol(object):
         self._init_ids()
         self._find_frame_fn()
         self._find_main_icon_fn()
+        self._find_mod_one_fn()
+        self._find_mod_two_fn()
 
     @property
     def frame_fn(self):
@@ -146,6 +169,12 @@ class MilSymbol(object):
         if not self._mod_two_fn:
             self._find_mod_two_fn()
         return self._mod_two_fn
+
+    @property
+    def amplifier_fn(self):
+        if not self._amplifier_fn:
+            self._find_amplifier_fn()
+        return self._amplifier_fn
 
     def _find_frame_fn(self):
         affiliations = _JMSML["affiliations"]
@@ -180,10 +209,30 @@ class MilSymbol(object):
     def _find_mod_one_fn(self):
         if self.sidc.modifier_one != "00" and self._mod_one_path:
             fn = self.sidc.symbolset + self.sidc.modifier_one + "1"
-            self._mod_one_fn = join(_SVG_PATH, self._mod_one_path, fn + ".svg")
+            self._mod_one_fn = normpath(join(_SVG_PATH, self._mod_one_path, fn + ".svg"))
 
     def _find_mod_two_fn(self):
         if self.sidc.modifier_two != "00" and self._mod_two_path:
             fn = self.sidc.symbolset + self.sidc.modifier_two + "2"
-            self._mod_two_fn = join(_SVG_PATH, self._mod_two_path, fn + ".svg")
+            self._mod_two_fn = normpath(join(_SVG_PATH, self._mod_two_path, fn + ".svg"))
+
+    def _find_amplifier_fn(self):
+        if self._symbol_set.get("geometry","") == "MIXED":
+            return
+        amplifier = mappings.amplifiers[self.sidc.amplifier]
+        descriptor = amplifier[self.sidc.amplifier_descriptor]
+        graphics = descriptor.get("graphics")
+        if graphics:
+            file_name = graphics.get(mappings.standard_identity_group[self._standard_identity_id])
+            if file_name:
+                self._amplifier_fn = normpath(join(_SVG_PATH, file_name.get("graphic")))
+
+
+
+
+
+
+
+
+
 

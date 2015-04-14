@@ -2,6 +2,7 @@ from cStringIO import StringIO
 from functools import wraps
 from flask import abort, render_template
 from flask import Response
+from os.path import exists
 from jmsml import Sidc, InvalidSidcLength, MilSymbol, InvalidSidc
 from milsymbserver import app
 import xml.etree.ElementTree as ET
@@ -37,7 +38,7 @@ def sic(sic):
         app.logger.error('Invalid symbol identification code')
         abort(404)
 
-    merged_svg = merge_svgs([symb.frame_fn, symb.main_icon_fn, symb.mod_one_fn, symb.mod_two_fn])
+    merged_svg = merge_svgs([symb.frame_fn, symb.main_icon_fn, symb.mod_one_fn, symb.mod_two_fn, symb.amplifier_fn])
     f = StringIO()
     merged_svg.write(f, xml_declaration=True, encoding='utf-8')
     return f.getvalue()
@@ -53,7 +54,7 @@ def merge_svgs(list_of_file_names):
         if g.get('display', '') == "none":
             root.remove(g)
     for file_name in list_of_file_names[1:]:
-        if not file_name:
+        if not file_name or not exists(file_name):
             continue
         svg = ET.parse(file_name)
         for g in svg.getroot().findall(ns_tag('g')):
