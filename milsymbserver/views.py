@@ -1,11 +1,9 @@
 from cStringIO import StringIO
 from functools import wraps
-from flask import abort
+from flask import abort, render_template
 from flask import Response
-import flask
 from jmsml import Sidc, InvalidSidcLength, MilSymbol, InvalidSidc
 from milsymbserver import app
-from os.path import join
 import xml.etree.ElementTree as ET
 
 ET.register_namespace('', "http://www.w3.org/2000/svg")
@@ -27,7 +25,7 @@ def return_svg(f):
 
 @app.route('/')
 def index():
-    return 'Hello World!'
+    return render_template('test.html')
 
 
 @app.route('/sidc/<sic>/')
@@ -45,7 +43,6 @@ def sic(sic):
     return f.getvalue()
 
 
-
 def merge_svgs(list_of_file_names):
     main_svg = ET.parse(list_of_file_names[0])
     root = main_svg.getroot()
@@ -55,7 +52,7 @@ def merge_svgs(list_of_file_names):
             g.attrib.pop("id")
         if g.get('display', '') == "none":
             root.remove(g)
-    for file_name in list_of_file_names[1:] :
+    for file_name in list_of_file_names[1:]:
         if not file_name:
             continue
         svg = ET.parse(file_name)

@@ -76,8 +76,10 @@ mappings = SymbolMappings(_JMSML)
 class InvalidSidc(Exception):
     """The symbol identification code is invalid"""
 
+
 class InvalidSidcLength(InvalidSidc):
     """The symbol identification code has an invalid length"""
+
 
 class Sidc(object):
     """Representation of a 20-digit symbol identification code"""
@@ -110,13 +112,13 @@ class MilSymbol(object):
     """Representation of a MILSTD 2525D/APP6D symbol"""
 
     def __init__(self, sidc):
-        
+
         self.sidc = Sidc(sidc)
         self._frame_fn = None
         self._main_icon_fn = None
         self._mod_one_fn = None
         self._mod_two_fn = None
-        
+
         self._init_ids()
         self._find_frame_fn()
         self._find_main_icon_fn()

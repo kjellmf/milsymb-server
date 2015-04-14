@@ -5,6 +5,7 @@ from milsymbserver import app
 
 from flask.ext.testing import TestCase
 
+
 class MilSymbTestCase(TestCase):
     def create_app(self):
         app.config['TESTING'] = True
@@ -34,7 +35,6 @@ class TestSidcClass(MilSymbTestCase):
 
 
 class TestMilSymbol(MilSymbTestCase):
-
     def test_frame_fn(self):
         symb = MilSymbol("10031002181211020000")
         self.assertIn("0_310_0.svg", symb.frame_fn)
@@ -68,8 +68,6 @@ class TestMilSymbol(MilSymbTestCase):
         self.assertTrue(exists(symb.main_icon_fn), "Can't find file %s" % symb.main_icon_fn)
 
 
-
-
 class TestSidc(MilSymbTestCase):
     def test_invalid_sic_length(self):
         response = self.client.get('/sidc/123456/')
@@ -86,15 +84,14 @@ class TestSidc(MilSymbTestCase):
         self.assert404(response)
 
 
-
 class TestResponseType(MilSymbTestCase):
     def test_svg_response(self):
         response = self.client.get('/sidc/10031002181211020000/')
-        self.assertEqual("image/svg+xml", response.mimetype,)
+        self.assertEqual("image/svg+xml", response.mimetype, )
 
     def test_testsymbol(self):
         response = self.client.get('/testsymbol')
-        self.assertEqual("image/svg+xml", response.mimetype,)
+        self.assertEqual("image/svg+xml", response.mimetype, )
 
 
 if __name__ == '__main__':
